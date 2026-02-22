@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>QR Code Generator</title>
+<style>
+body {
+    font-family: 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+    margin: 0;
+    padding: 0;
+    color: #fff;
+}
+.container {
+    max-width: 420px;
+    margin: 20px auto;
+    background: rgba(255,255,255,0.08);
+    border-radius: 20px;
+    padding: 20px;
+    backdrop-filter: blur(12px);
+    box-shadow: 0 15px 40px rgba(0,0,0,0.5);
+}
+.header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+.header img {
+    width: 65px;
+    height: 65px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #00eaff;
+}
+.header input {
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid #00eaff;
+    color: #fff;
+    font-size: 18px;
+    outline: none;
+    width: 100%;
+}
+.qr-box {
+    margin-top: 20px;
+    text-align: center;
+}
+.qr-box img {
+    width: 200px;
+    height: 200px;
+    background: #fff;
+    padding: 10px;
+    border-radius: 12px;
+}
+input[type="text"] {
+    width: 100%;
+    padding: 12px;
+    border-radius: 12px;
+    border: none;
+    margin-top: 15px;
+    font-size: 16px;
+    outline: none;
+}
+button {
+    width: 100%;
+    margin-top: 15px;
+    padding: 12px;
+    font-size: 16px;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    background: linear-gradient(135deg, #00eaff, #00ffa2);
+    color: #000;
+    font-weight: bold;
+}
+button:hover {
+    opacity: 0.9;
+}
+.history {
+    margin-top: 20px;
+}
+.history h3 {
+    text-align: center;
+    margin-bottom: 10px;
+}
+.history-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(0,0,0,0.4);
+    padding: 8px;
+    border-radius: 10px;
+    margin-bottom: 8px;
+    cursor: pointer;
+}
+.history-item img {
+    width: 40px;
+    height: 40px;
+    background: #fff;
+    padding: 3px;
+    border-radius: 6px;
+}
+small {
+    opacity: 0.8;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+    <div class="header">
+        <img id="profilePic" src="https://via.placeholder.com/100">
+        <div>
+            <input type="text" id="userName" placeholder="Your Name">
+            <input type="file" id="profileUpload" accept="image/*">
+        </div>
+    </div>
+
+    <input type="text" id="qrText" placeholder="Enter text for QR code">
+
+    <button onclick="generateQR()">Generate QR Code</button>
+
+    <div class="qr-box">
+        <img id="qrImage" src="">
+        <br>
+        <button onclick="downloadQR()">Download QR</button>
+    </div>
+
+    <div class="history">
+        <h3>QR History</h3>
+        <div id="historyList"></div>
+    </div>
+
+</div>
+
+<script>
+const qrImage = document.getElementById("qrImage");
+const historyList = document.getElementById("historyList");
+
+// Load history
+let history = JSON.parse(localStorage.getItem("qrHistory")) || [];
+
+function generateQR() {
+    const text = document.getElementById("qrText").value;
+    if (!text) return alert("Please enter some text");
+
+    const url = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(text)}`;
+    qrImage.src = url;
+
+    history.unshift({ text, url });
+    localStorage.setItem("qrHistory", JSON.stringify(history));
+    loadHistory();
+}
+
+function downloadQR() {
+    if (!qrImage.src) return;
+    const a = document.createElement("a");
+    a.href = qrImage.src;
+    a.download = "qr-code.png";
+    a.click();
+}
+
+function loadHistory() {
+    historyList.innerHTML = "";
+    history.forEach(item => {
+        const div = document.createElement("div");
+        div.className = "history-item";
+        div.innerHTML = `
+            <img src="${item.url}">
+            <small>${item.text}</small>
+        `;
+        div.onclick = () => qrImage.src = item.url;
+        historyList.appendChild(div);
+    });
+}
+loadHistory();
+
+// Profile picture
+document.getElementById("profileUpload").addEventListener("change", e => {
+    const file = e.target.files[0];
+    const reader = new FileReader();
+    reader.onload = () => {
+        document.getElementById("profilePic").src = reader.result;
+        localStorage.setItem("profilePic", reader.result);
+    };
+    reader.readAsDataURL(file);
+});
+
+// Load profile
+if (localStorage.getItem("profilePic")) {
+    document.getElementById("profilePic").src = localStorage.getItem("profilePic");
+}
+</script>
+
+</body>
+</html>
